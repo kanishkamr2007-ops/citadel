@@ -4,14 +4,45 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
-const morgan = require('morgan');
 const fs = require('fs');
+const crypto = require('crypto');
 const connectDB = require('./config/db');
 
 // Connect to MongoDB Database
 connectDB();
 
 const app = express();
+
+app.use((req, res, next) => {
+  const suppliedRequestId = req.get('X-Request-Id');
+  const requestId = suppliedRequestId && /^[a-zA-Z0-9_-]{8,80}$/.test(suppliedRequestId)
+    ? suppliedRequestId
+    : crypto.randomUUID();
+  const startedAt = Date.now();
+  const requestPath = req.originalUrl.split('?')[0];
+
+  req.requestId = requestId;
+  res.setHeader('X-Request-Id', requestId);
+  console.info(`[HTTP] ${JSON.stringify({
+    event: 'request_started',
+    requestId,
+    method: req.method,
+    path: requestPath
+  })}`);
+
+  res.on('finish', () => {
+    console.info(`[HTTP] ${JSON.stringify({
+      event: 'request_completed',
+      requestId,
+      method: req.method,
+      path: requestPath,
+      status: res.statusCode,
+      durationMs: Date.now() - startedAt
+    })}`);
+  });
+
+  next();
+});
 
 // Security Middleware (allowing CDNs for fonts and scripts used by frontend)
 app.use(helmet({
@@ -48,11 +79,6 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
-
-// Request Logger
-if (process.env.NODE_ENV !== 'test') {
-  app.use(morgan('dev'));
-}
 
 // API Routes
 app.use('/api/auth', require('./routes/authRoutes'));
@@ -102,8 +128,15 @@ app.get('/', (req, res) => {
 
 // Centralized Error Handler
 app.use((err, req, res, next) => {
-  console.error('Unhandled Application Error:', err);
   const statusCode = err.statusCode || 500;
+  console.error(`[HTTP] ${JSON.stringify({
+    event: 'request_error',
+    requestId: req.requestId,
+    method: req.method,
+    path: req.originalUrl.split('?')[0],
+    status: statusCode,
+    error: err.name || 'Error'
+  })}`);
   res.status(statusCode).json({
     success: false,
     message: err.message || 'Internal Server Error'

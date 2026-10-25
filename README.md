@@ -172,6 +172,9 @@ npm test                  # Runs all 54 automated integration test assertions
 
 ## 🧪 Testing & Verification
 
+### Request Diagnostics
+Frontend API requests log the request ID, method, destination path, HTTP status, and duration in the browser developer console. Backend logs the same request ID with the method, path, status, and duration in the service logs (for example, Render logs). Request bodies, passwords, tokens, and query strings are not included. Use the request ID to match a browser entry with its backend request.
+
 The backend includes comprehensive end-to-end integration test suites:
 
 ```bash

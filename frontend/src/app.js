@@ -1110,14 +1110,29 @@ const CitadelApi = {
       localStorage.removeItem('citadel_jwt_token');
     }
   },
+  createRequestId() {
+    return window.crypto && typeof window.crypto.randomUUID === 'function'
+      ? window.crypto.randomUUID()
+      : `req-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  },
+  logRequest(event, details) {
+    console.info(`[CitadelApi] ${JSON.stringify({ event, ...details })}`);
+  },
   async request(endpoint, options = {}) {
     const token = this.getToken();
+    const method = (options.method || 'GET').toUpperCase();
+    const requestId = this.createRequestId();
     const headers = {
       'Content-Type': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-      ...(options.headers || {})
+      ...(options.headers || {}),
+      'X-Request-Id': requestId
     };
     const targetUrl = this.getUrl(endpoint);
+    const requestUrl = new URL(targetUrl, window.location.origin);
+    const requestPath = `${requestUrl.origin}${requestUrl.pathname}`;
+    const startedAt = Date.now();
+    this.logRequest('request_started', { requestId, method, path: requestPath });
     try {
       const res = await fetch(targetUrl, {
         ...options,
@@ -1125,12 +1140,25 @@ const CitadelApi = {
         credentials: 'include'
       });
       const data = await res.json().catch(() => ({}));
+      this.logRequest('request_completed', {
+        requestId,
+        method,
+        path: requestPath,
+        status: res.status,
+        durationMs: Date.now() - startedAt
+      });
       if (!res.ok) {
         throw new Error(data.message || `Request failed with status ${res.status}`);
       }
       return data;
     } catch (err) {
-      console.warn(`[CitadelApi] Request error (${endpoint}):`, err.message);
+      this.logRequest('request_failed', {
+        requestId,
+        method,
+        path: requestPath,
+        durationMs: Date.now() - startedAt,
+        error: err.name || 'Error'
+      });
       throw err;
     }
   },
@@ -1147,14 +1175,36 @@ const CitadelApi = {
   },
   async downloadBlob(endpoint) {
     const token = this.getToken();
+    const requestId = this.createRequestId();
     const headers = {
       ...(token ? { 'Authorization': `Bearer ${token}` } : {})
     };
+    headers['X-Request-Id'] = requestId;
     const targetUrl = this.getUrl(endpoint);
+    const requestUrl = new URL(targetUrl, window.location.origin);
+    const requestPath = `${requestUrl.origin}${requestUrl.pathname}`;
+    const startedAt = Date.now();
+    this.logRequest('request_started', { requestId, method: 'GET', path: requestPath });
     const res = await fetch(targetUrl, {
       method: 'GET',
       headers,
       credentials: 'include'
+    }).catch(err => {
+      this.logRequest('request_failed', {
+        requestId,
+        method: 'GET',
+        path: requestPath,
+        durationMs: Date.now() - startedAt,
+        error: err.name || 'NetworkError'
+      });
+      throw err;
+    });
+    this.logRequest('request_completed', {
+      requestId,
+      method: 'GET',
+      path: requestPath,
+      status: res.status,
+      durationMs: Date.now() - startedAt
     });
     if (!res.ok) {
       let errMsg = `Download failed with status ${res.status}`;
