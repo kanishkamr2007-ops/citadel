@@ -173,7 +173,13 @@ npm test                  # Runs all 54 automated integration test assertions
 ## 🧪 Testing & Verification
 
 ### Request Diagnostics
-Frontend API requests log the request ID, method, destination path, HTTP status, and duration in the browser developer console. Backend logs the same request ID with the method, path, status, and duration in the service logs (for example, Render logs). Request bodies, passwords, tokens, and query strings are not included. Use the request ID to match a browser entry with its backend request.
+Frontend API requests print one readable result line in the browser developer console, for example `⚠️ POST https://api.example.com/api/auth/login -> 405 Method Not Allowed | 120 ms | request <id>`. The backend prints the matching request ID with its path, status, duration, and browser origin in the service logs (for example, Render logs). Search Render logs for the request ID shown in the browser:
+
+- If the frontend says `405` and that request ID is missing from Render, the request likely went to the wrong host (for example, the Vercel frontend instead of the backend).
+- If the ID appears in Render, use the backend status and path to see what the API received and returned.
+- A `Network error` means the browser could not read an HTTP response; check the configured API URL, CORS, and service availability.
+
+Request bodies, passwords, tokens, and query strings are not logged.
 
 The backend includes comprehensive end-to-end integration test suites:
 

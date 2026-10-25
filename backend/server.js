@@ -20,25 +20,19 @@ app.use((req, res, next) => {
     : crypto.randomUUID();
   const startedAt = Date.now();
   const requestPath = req.originalUrl.split('?')[0];
+  const requestOrigin = req.get('Origin') || 'non-browser request';
 
   req.requestId = requestId;
   res.setHeader('X-Request-Id', requestId);
-  console.info(`[HTTP] ${JSON.stringify({
-    event: 'request_started',
-    requestId,
-    method: req.method,
-    path: requestPath
-  })}`);
 
   res.on('finish', () => {
-    console.info(`[HTTP] ${JSON.stringify({
-      event: 'request_completed',
-      requestId,
-      method: req.method,
-      path: requestPath,
-      status: res.statusCode,
-      durationMs: Date.now() - startedAt
-    })}`);
+    const status = `${res.statusCode} ${res.statusMessage || ''}`.trim();
+    const outcome = res.statusCode >= 500 ? 'ERROR' : res.statusCode >= 400 ? 'WARN' : 'OK';
+    const icon = outcome === 'ERROR' ? '❌' : outcome === 'WARN' ? '⚠️' : '✅';
+    console.info(
+      `[API ${outcome}] ${icon} ${req.method} ${requestPath} -> ${status} | ` +
+      `${Date.now() - startedAt} ms | request ${requestId} | origin ${requestOrigin}`
+    );
   });
 
   next();
@@ -129,14 +123,10 @@ app.get('/', (req, res) => {
 // Centralized Error Handler
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
-  console.error(`[HTTP] ${JSON.stringify({
-    event: 'request_error',
-    requestId: req.requestId,
-    method: req.method,
-    path: req.originalUrl.split('?')[0],
-    status: statusCode,
-    error: err.name || 'Error'
-  })}`);
+  console.error(
+    `[API ERROR] ${req.method} ${req.originalUrl.split('?')[0]} -> ${statusCode} | ` +
+    `request ${req.requestId || 'unassigned'} | ${err.name || 'Error'}`
+  );
   res.status(statusCode).json({
     success: false,
     message: err.message || 'Internal Server Error'

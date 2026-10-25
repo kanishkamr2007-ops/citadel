@@ -1115,8 +1115,21 @@ const CitadelApi = {
       ? window.crypto.randomUUID()
       : `req-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   },
-  logRequest(event, details) {
-    console.info(`[CitadelApi] ${JSON.stringify({ event, ...details })}`);
+  logRequest(outcome, details) {
+    const icon = outcome === 'success' ? '✅' : outcome === 'http_error' ? '⚠️' : '❌';
+    const result = details.status
+      ? `${details.status} ${details.statusText || ''}`.trim()
+      : `${details.error || 'Network error'} (check API URL, CORS, or connectivity)`;
+    const message =
+      `[Citadel API ${outcome.toUpperCase()}] ${icon} ${details.method} ${details.path} -> ${result} | ` +
+      `${details.durationMs} ms | request ${details.requestId}`;
+    if (outcome === 'network_error') {
+      console.error(message);
+    } else if (outcome === 'http_error') {
+      console.warn(message);
+    } else {
+      console.info(message);
+    }
   },
   async request(endpoint, options = {}) {
     const token = this.getToken();
@@ -1132,7 +1145,6 @@ const CitadelApi = {
     const requestUrl = new URL(targetUrl, window.location.origin);
     const requestPath = `${requestUrl.origin}${requestUrl.pathname}`;
     const startedAt = Date.now();
-    this.logRequest('request_started', { requestId, method, path: requestPath });
     try {
       const res = await fetch(targetUrl, {
         ...options,
@@ -1140,24 +1152,30 @@ const CitadelApi = {
         credentials: 'include'
       });
       const data = await res.json().catch(() => ({}));
-      this.logRequest('request_completed', {
+      if (!res.ok) {
+        const error = new Error(data.message || `Request failed with status ${res.status}`);
+        error.status = res.status;
+        error.statusText = res.statusText;
+        throw error;
+      }
+      this.logRequest('success', {
         requestId,
         method,
         path: requestPath,
         status: res.status,
+        statusText: res.statusText,
         durationMs: Date.now() - startedAt
       });
-      if (!res.ok) {
-        throw new Error(data.message || `Request failed with status ${res.status}`);
-      }
       return data;
     } catch (err) {
-      this.logRequest('request_failed', {
+      this.logRequest(err.status ? 'http_error' : 'network_error', {
         requestId,
         method,
         path: requestPath,
+        status: err.status,
+        statusText: err.statusText,
+        error: err.status ? undefined : err.name || 'Network error',
         durationMs: Date.now() - startedAt,
-        error: err.name || 'Error'
       });
       throw err;
     }
@@ -1184,13 +1202,15 @@ const CitadelApi = {
     const requestUrl = new URL(targetUrl, window.location.origin);
     const requestPath = `${requestUrl.origin}${requestUrl.pathname}`;
     const startedAt = Date.now();
-    this.logRequest('request_started', { requestId, method: 'GET', path: requestPath });
-    const res = await fetch(targetUrl, {
-      method: 'GET',
-      headers,
-      credentials: 'include'
-    }).catch(err => {
-      this.logRequest('request_failed', {
+    let res;
+    try {
+      res = await fetch(targetUrl, {
+        method: 'GET',
+        headers,
+        credentials: 'include'
+      });
+    } catch (err) {
+      this.logRequest('network_error', {
         requestId,
         method: 'GET',
         path: requestPath,
@@ -1198,22 +1218,31 @@ const CitadelApi = {
         error: err.name || 'NetworkError'
       });
       throw err;
-    });
-    this.logRequest('request_completed', {
-      requestId,
-      method: 'GET',
-      path: requestPath,
-      status: res.status,
-      durationMs: Date.now() - startedAt
-    });
+    }
     if (!res.ok) {
       let errMsg = `Download failed with status ${res.status}`;
       try {
         const errJson = await res.json();
         if (errJson && errJson.message) errMsg = errJson.message;
       } catch (e) {}
+      this.logRequest('http_error', {
+        requestId,
+        method: 'GET',
+        path: requestPath,
+        status: res.status,
+        statusText: res.statusText,
+        durationMs: Date.now() - startedAt
+      });
       throw new Error(errMsg);
     }
+    this.logRequest('success', {
+      requestId,
+      method: 'GET',
+      path: requestPath,
+      status: res.status,
+      statusText: res.statusText,
+      durationMs: Date.now() - startedAt
+    });
     const blob = await res.blob();
     const disposition = res.headers.get('Content-Disposition') || '';
     let filename = '';
