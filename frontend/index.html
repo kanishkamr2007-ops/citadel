@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CITADEL — Personal Digital Security Vault</title>
+  <meta name="description" content="CITADEL is a secure digital vault where users can manage their website passwords, login credentials, important documents, and private notes from one centralized, protected platform.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23059669'><path d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/></svg>">
+
+  <!-- Early Theme Setter to prevent FOUC -->
+  <script>
+    (function() {
+      try {
+        var state = localStorage.getItem('citadel_vault_state');
+        if (state) {
+          var parsed = JSON.parse(state);
+          if (parsed && parsed.settings && parsed.settings.theme) {
+            document.documentElement.setAttribute('data-theme', parsed.settings.theme);
+          }
+        }
+      } catch(e) {}
+    })();
+  </script>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: ['selector', '[data-theme="dark"]'],
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ECFDF5',
+              100: '#D1FAE5',
+              200: '#A7F3D0',
+              300: '#6EE7B7',
+              400: '#34D399',
+              500: '#10B981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065F46',
+              900: '#064E3B',
+              950: '#022C22',
+            },
+            indigo: {
+              50: '#ECFDF5',
+              100: '#D1FAE5',
+              200: '#A7F3D0',
+              300: '#6EE7B7',
+              400: '#34D399',
+              500: '#10B981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065F46',
+              900: '#064E3B',
+              950: '#022C22',
+            },
+            cyber: {
+              navy: '#070B14',
+              surface: '#0D1527',
+              elevated: '#131D35',
+              cyan: '#059669',
+              violet: '#047857',
+              emerald: '#10B981',
+              rose: '#B91C1C',
+              amber: '#92400E'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom Styles -->
+  <style>
+/* CITADEL — Premium Cybersecurity Vault Styles */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap');
+
+:root {
+  --bg-primary: #070B14;
+  --bg-secondary: #0D1527;
+  --bg-surface: rgba(15, 23, 42, 0.75);
+  --bg-surface-elevated: rgba(30, 41, 59, 0.8);
+  --border-subtle: rgba(51, 65, 85, 0.6);
+  --border-glow: rgba(5, 150, 105, 0.4);
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --accent-primary: #059669;
+  --accent-hover: #047857;
+  --accent-light: #ECFDF5;
+  --accent-cyan: #06B6D4;
+  --accent-emerald: #10B981;
+  --accent-rose: #F43F5E;
+  --accent-amber: #F59E0B;
+}
+
+[data-theme="light"] {
+  --bg-primary: #F8FAFC;
+  --bg-secondary: #F1F5F9;
+  --bg-surface: #FFFFFF;
+  --bg-surface-elevated: #FFFFFF;
+  --border-subtle: #CBD5E1;
+  --border-glow: rgba(5, 150, 105, 0.35);
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #4B5563;
+  --accent-primary: #059669;
+  --accent-hover: #047857;
+  --accent-light: #ECFDF5;
+  --accent-rose: #B91C1C;
+  --accent-amber: #92400E;
+}
+
+/* Global Focus Ring for Keyboard Navigation */
+:focus-visible {
+  outline: 2px solid #059669 !important;
+  outline-offset: 2px !important;
+}
+
+html[data-theme="light"] body {
+  background: #F8FAFC !important;
+  color: #111827 !important;
+}
+
+/* Base Surfaces & Card Elevations with visible #CBD5E1 borders */
+html[data-theme="light"] .glass-panel {
+  background: #FFFFFF !important;
+  border: 1px solid #CBD5E1 !important;
+  box-shadow: 0 4px 14px -2px rgba(15, 23, 42, 0.07), 0 2px 6px -1px rgba(15, 23, 42, 0.04) !important;
+}
+
+html[data-theme="light"] .glass-panel:hover {
+  border-color: #059669 !important;
+  box-shadow: 0 10px 25px -4px rgba(5, 150, 105, 0.16), 0 4px 10px -2px rgba(15, 23, 42, 0.04) !important;
+}
+
+html[data-theme="light"] .glass-panel-elevated {
+  background: #FFFFFF !important;
+  border: 1px solid #CBD5E1 !important;
+  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* Navigation & Sidebars */
+html[data-theme="light"] header,
+html[data-theme="light"] aside {
+  background-color: #FFFFFF !important;
+  border-color: #CBD5E1 !important;
+}
+
+/* Modal Backdrops remain dark & translucent */
+html[data-theme="light"] #modal-root .fixed.inset-0,
+html[data-theme="light"] .fixed.inset-0[class*="bg-slate-950"] {
+  background-color: rgba(17, 24, 39, 0.65) !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+/* Modals & Dropdown containers */
+html[data-theme="light"] #modal-root .glass-panel-elevated,
+html[data-theme="light"] #modal-root [class*="bg-slate-900"],
+html[data-theme="light"] [id$="-dropdown"],
+html[data-theme="light"] [id$="-menu"] {
+  background-color: #FFFFFF !important;
+  border: 1px solid #CBD5E1 !important;
+  box-shadow: 0 20px 35px -5px rgba(15, 23, 42, 0.15) !important;
+}
+
+/* Input Fields & Select Boxes */
+html[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html[data-theme="light"] select,
+html[data-theme="light"] textarea {
+  background-color: #FFFFFF !important;
+  border: 1.5px solid #CBD5E1 !important;
+  color: #111827 !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04) !important;
+}
+
+html[data-theme="light"] input:focus,
+html[data-theme="light"] select:focus,
+html[data-theme="light"] textarea:focus {
+  background-color: #FFFFFF !important;
+  border-color: #059669 !important;
+  outline: 2px solid #059669 !important;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2) !important;
+}
+
+html[data-theme="light"] input::placeholder,
+html[data-theme="light"] textarea::placeholder {
+  color: #6B7280 !important;
+  opacity: 1 !important;
+}
+
+/* Checkbox and Radio in Light Mode */
+html[data-theme="light"] input[type="checkbox"],
+html[data-theme="light"] input[type="radio"] {
+  border-color: #9CA3AF !important;
+  background-color: #FFFFFF !important;
+  accent-color: #059669 !important;
+}
+
+/* Range sliders */
+html[data-theme="light"] input[type="range"] {
+  background: #E5E7EB !important;
+  accent-color: #059669 !important;
+}
+
+/* Inset Containers, Code Blocks, Password Generators & Details */
+html[data-theme="light"] [class*="bg-slate-950"]:not(body),
+html[data-theme="light"] [class*="bg-slate-900"]:not(body):not(header):not(aside),
+html[data-theme="light"] [class*="bg-slate-800"]:not(body):not(header):not(aside) {
+  background-color: #F8FAFC !important;
+  border-color: #CBD5E1 !important;
+}
+
+html[data-theme="light"] [class*="bg-slate-700"]:not(body) {
+  background-color: #F1F5F9 !important;
+  border-color: #CBD5E1 !important;
+}
+
+/* Secondary Neutral Buttons in Light Mode */
+html[data-theme="light"] button[class*="border-slate-700"],
+html[data-theme="light"] button[class*="border-slate-800"],
+html[data-theme="light"] button[class*="bg-slate-900"],
+html[data-theme="light"] button[class*="bg-slate-800"]:not([class*="bg-rose"]):not([class*="bg-emerald"]):not([class*="bg-indigo-600"]) {
+  background-color: #F1F5F9 !important;
+  border: 1px solid #CBD5E1 !important;
+  color: #111827 !important;
+  font-weight: 600 !important;
+}
+
+html[data-theme="light"] button[class*="border-slate-700"]:hover,
+html[data-theme="light"] button[class*="border-slate-800"]:hover,
+html[data-theme="light"] button[class*="bg-slate-900"]:hover,
+html[data-theme="light"] button[class*="bg-slate-800"]:not([class*="bg-rose"]):not([class*="bg-emerald"]):not([class*="bg-indigo-600"]):hover {
+  background-color: #ECFDF5 !important;
+  border-color: #059669 !important;
+  color: #047857 !important;
+}
+
+/* Hover States for list items and dropdowns */
+html[data-theme="light"] [class*="hover:bg-slate-800"]:hover,
+html[data-theme="light"] [class*="hover:bg-slate-700"]:hover {
+  background-color: #ECFDF5 !important;
+  color: #064E3B !important;
+}
+
+/* Text Hierarchy in Light Mode */
+html[data-theme="light"] h1,
+html[data-theme="light"] h2,
+html[data-theme="light"] h3,
+html[data-theme="light"] h4,
+html[data-theme="light"] h5,
+html[data-theme="light"] h6 {
+  color: #111827 !important;
+}
+
+html[data-theme="light"] [class~="text-white"]:not(.cyber-glow-btn):not(.btn-primary):not([class*="bg-emerald"]):not([class*="bg-rose"]):not([class*="bg-indigo-600"]):not(.badge-white) {
+  color: #111827 !important;
+}
+
+html[data-theme="light"] [class~="text-slate-100"],
+html[data-theme="light"] [class~="text-slate-200"] {
+  color: #111827 !important;
+}
+
+html[data-theme="light"] [class~="text-slate-300"],
+html[data-theme="light"] [class~="text-slate-400"] {
+  color: #374151 !important;
+}
+
+html[data-theme="light"] [class~="text-slate-500"],
+html[data-theme="light"] [class~="text-slate-600"] {
+  color: #4B5563 !important;
+}
+
+html[data-theme="light"] label {
+  color: #374151 !important;
+  font-weight: 600 !important;
+}
+
+/* Prevent pale gray, light blue, or light purple text in Light Mode */
+html[data-theme="light"] [class*="text-indigo-"],
+html[data-theme="light"] [class*="text-cyan-"],
+html[data-theme="light"] [class*="text-violet-"],
+html[data-theme="light"] [class*="text-purple-"],
+html[data-theme="light"] [class*="text-blue-"] {
+  color: #047857 !important;
+}
+
+/* Error and Warning Text in Light Mode */
+html[data-theme="light"] [class*="text-rose-"],
+html[data-theme="light"] [class*="text-red-"] {
+  color: #B91C1C !important;
+}
+
+html[data-theme="light"] [class*="text-amber-"],
+html[data-theme="light"] [class*="text-yellow-"] {
+  color: #92400E !important;
+}
+
+/* Links & interactive underlines */
+html[data-theme="light"] a,
+html[data-theme="light"] button.hover\:underline,
+html[data-theme="light"] .hover\:underline {
+  color: #047857 !important;
+  font-weight: 600 !important;
+}
+
+html[data-theme="light"] a:hover,
+html[data-theme="light"] button.hover\:underline:hover {
+  color: #065F46 !important;
+  text-decoration: underline !important;
+}
+
+/* Active navigation item in Light Mode */
+html[data-theme="light"] nav button[class*="from-indigo-"],
+html[data-theme="light"] nav button[class*="from-emerald-"] {
+  background: #ECFDF5 !important;
+  color: #064E3B !important;
+  border: 1px solid #059669 !important;
+  box-shadow: 0 2px 8px -1px rgba(5, 150, 105, 0.2) !important;
+  font-weight: 700 !important;
+}
+
+html[data-theme="light"] nav button[class*="from-indigo-"] span,
+html[data-theme="light"] nav button[class*="from-indigo-"] svg,
+html[data-theme="light"] nav button[class*="from-emerald-"] span,
+html[data-theme="light"] nav button[class*="from-emerald-"] svg {
+  color: #059669 !important;
+}
+
+/* Mobile bottom nav active in Light Mode */
+html[data-theme="light"] nav.md\:hidden button[class*="text-indigo-400"],
+html[data-theme="light"] nav.md\:hidden button[class*="text-emerald-400"] {
+  color: #059669 !important;
+}
+
+/* Secondary Inset Banners and Demo Login button in Light Mode */
+html[data-theme="light"] [class*="border-dashed"][class*="border-indigo-"],
+html[data-theme="light"] [class*="border-dashed"][class*="border-emerald-"] {
+  background-color: #ECFDF5 !important;
+  border-color: #059669 !important;
+  color: #064E3B !important;
+}
+html[data-theme="light"] [class*="border-dashed"][class*="border-indigo-"]:hover,
+html[data-theme="light"] [class*="border-dashed"][class*="border-emerald-"]:hover {
+  background-color: #D1FAE5 !important;
+  color: #047857 !important;
+}
+
+/* Hero & Dashboard Welcome Banner in Light Mode */
+html[data-theme="light"] .glass-panel[class*="bg-gradient-to-r"] {
+  background: linear-gradient(135deg, #ECFDF5 0%, #FFFFFF 60%, #F0FDF4 100%) !important;
+  border: 1.5px solid #CBD5E1 !important;
+}
+
+html[data-theme="light"] .glass-panel[class*="bg-gradient-to-r"] h1 {
+  color: #111827 !important;
+}
+
+html[data-theme="light"] .glass-panel[class*="bg-gradient-to-r"] p {
+  color: #374151 !important;
+}
+
+html[data-theme="light"] .glass-panel[class*="bg-gradient-to-r"] [class*="bg-emerald-500/10"] {
+  background-color: #D1FAE5 !important;
+  border-color: #059669 !important;
+  color: #065F46 !important;
+}
+
+/* Dashboard KPI Stat Cards in Light Mode */
+html[data-theme="light"] [onclick*="navigate('passwords')"].glass-panel,
+html[data-theme="light"] [onclick*="navigate('documents')"].glass-panel,
+html[data-theme="light"] [onclick*="navigate('notes')"].glass-panel,
+html[data-theme="light"] [onclick*="navigate('security')"].glass-panel {
+  background-color: #FFFFFF !important;
+  border-color: #CBD5E1 !important;
+}
+
+html[data-theme="light"] [onclick*="navigate('passwords')"] [class*="rounded-xl"][class*="border-"],
+html[data-theme="light"] [onclick*="navigate('documents')"] [class*="rounded-xl"][class*="border-"],
+html[data-theme="light"] [onclick*="navigate('notes')"] [class*="rounded-xl"][class*="border-"],
+html[data-theme="light"] [onclick*="navigate('security')"] [class*="rounded-xl"][class*="border-"] {
+  background-color: #ECFDF5 !important;
+  color: #047857 !important;
+  border-color: #A7F3D0 !important;
+}
+
+html[data-theme="light"] [onclick*="navigate('passwords')"] [class*="hover:underline"],
+html[data-theme="light"] [onclick*="navigate('documents')"] [class*="hover:underline"],
+html[data-theme="light"] [onclick*="navigate('notes')"] [class*="hover:underline"],
+html[data-theme="light"] [onclick*="navigate('security')"] [class*="hover:underline"] {
+  color: #047857 !important;
+  font-weight: 700 !important;
+}
+
+/* Soft Emerald / Green Badges in Light Mode */
+html[data-theme="light"] [class*="bg-emerald-500/"],
+html[data-theme="light"] [class*="bg-indigo-500/20"],
+html[data-theme="light"] [class*="bg-indigo-950"] {
+  background-color: #ECFDF5 !important;
+  border-color: #A7F3D0 !important;
+  color: #065F46 !important;
+}
+
+/* Disabled Elements */
+html[data-theme="light"] :disabled,
+html[data-theme="light"] [disabled] {
+  color: #9CA3AF !important;
+  border-color: #E5E7EB !important;
+  cursor: not-allowed !important;
+}
+
+/* CRITICAL: Keep text-white WHITE on primary green buttons and alert banners */
+html[data-theme="light"] .cyber-glow-btn,
+html[data-theme="light"] .cyber-glow-btn *,
+html[data-theme="light"] [class~="bg-indigo-600"],
+html[data-theme="light"] [class~="bg-indigo-600"] *,
+html[data-theme="light"] [class~="bg-emerald-600"],
+html[data-theme="light"] [class~="bg-emerald-600"] *,
+html[data-theme="light"] [class~="bg-emerald-500"],
+html[data-theme="light"] [class~="bg-emerald-500"] *,
+html[data-theme="light"] [class~="bg-rose-600"],
+html[data-theme="light"] [class~="bg-rose-600"] *,
+html[data-theme="light"] [class~="bg-amber-600"],
+html[data-theme="light"] [class~="bg-amber-600"] *,
+html[data-theme="light"] .btn-primary,
+html[data-theme="light"] .btn-primary * {
+  color: #FFFFFF !important;
+}
+
+/* Security Center Card & SVG Progress Ring in Light Mode */
+html[data-theme="light"] .glass-panel[class*="bg-gradient-to-br"] {
+  background: #FFFFFF !important;
+  border: 1px solid #CBD5E1 !important;
+}
+
+html[data-theme="light"] svg circle[stroke="rgba(51, 65, 85, 0.4)"] {
+  stroke: #E2E8F0 !important;
+}
+
+html[data-theme="light"] [class*="text-emerald-400"],
+html[data-theme="light"] [class*="text-emerald-500"] {
+  color: #047857 !important;
+}
+
+html[data-theme="light"] [class*="border-rose-500/"] {
+  border-color: #FCA5A5 !important;
+}
+
+html[data-theme="light"] [class*="border-amber-500/"] {
+  border-color: #FCD34D !important;
+}
+
+/* Visible Borders in Light Mode */
+html[data-theme="light"] [class*="border-slate-900"],
+html[data-theme="light"] [class*="border-slate-800"],
+html[data-theme="light"] [class*="border-slate-700"],
+html[data-theme="light"] [class*="border-slate-600"],
+html[data-theme="light"] [class*="border-indigo-"] {
+  border-color: #CBD5E1 !important;
+}
+
+/* Brand Logo Text in Light Mode */
+html[data-theme="light"] .brand-title {
+  background: linear-gradient(135deg, #111827 0%, #064E3B 50%, #059669 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Cyber Grid in Light Mode */
+html[data-theme="light"] .cyber-grid-bg {
+  background-image: 
+    linear-gradient(rgba(5, 150, 105, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(5, 150, 105, 0.05) 1px, transparent 1px) !important;
+}
+
+/* Landing Page Vault Ring Graphic for Light Mode */
+html[data-theme="light"] .vault-shield-outer {
+  background: radial-gradient(circle, rgba(5, 150, 105, 0.12) 0%, rgba(241, 245, 249, 0.95) 70%) !important;
+  border-color: rgba(5, 150, 105, 0.35) !important;
+  box-shadow: 0 0 40px rgba(5, 150, 105, 0.15) !important;
+}
+
+html[data-theme="light"] .vault-shield-inner {
+  background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%) !important;
+  border-color: rgba(5, 150, 105, 0.45) !important;
+  box-shadow: 0 0 20px rgba(5, 150, 105, 0.2) !important;
+}
+
+html[data-theme="light"] .vault-shield-inner span,
+html[data-theme="light"] .vault-shield-inner div {
+  color: #064E3B !important;
+}
+
+html[data-theme="light"] .vault-ring-dials {
+  border-color: rgba(5, 150, 105, 0.4) !important;
+}
+
+/* Tooltip in Light Mode */
+html[data-theme="light"] [data-tooltip]::after {
+  background: #111827;
+  color: #F8FAFC;
+  border: 1px solid #059669;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.mono {
+  font-family: 'Fira Code', monospace;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.4);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(5, 150, 105, 0.4);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(5, 150, 105, 0.7);
+}
+
+/* Glassmorphism Cards */
+.glass-panel {
+  background: var(--bg-surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-panel:hover {
+  border-color: var(--border-glow);
+  box-shadow: 0 14px 40px -10px rgba(5, 150, 105, 0.2);
+}
+
+.glass-panel-elevated {
+  background: var(--bg-surface-elevated);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 1.25rem;
+}
+
+/* Cybersecurity Gradient Backgrounds & Borders */
+.cyber-gradient-text {
+  background: linear-gradient(135deg, #10B981 0%, #059669 50%, #047857 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+html[data-theme="light"] .cyber-gradient-text {
+  background: linear-gradient(135deg, #047857 0%, #059669 50%, #064E3B 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Primary Green Buttons (Replaced blue/purple/indigo) */
+.cyber-glow-btn {
+  background: #059669 !important;
+  background-image: linear-gradient(135deg, #059669 0%, #047857 50%, #065F46 100%) !important;
+  color: #FFFFFF !important;
+  border: 1px solid #047857 !important;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 16px -2px rgba(5, 150, 105, 0.4) !important;
+}
+
+.cyber-glow-btn:hover {
+  background: #047857 !important;
+  background-image: linear-gradient(135deg, #047857 0%, #065F46 100%) !important;
+  transform: translateY(-1.5px);
+  box-shadow: 0 8px 24px 0px rgba(5, 150, 105, 0.55) !important;
+  color: #FFFFFF !important;
+}
+
+.cyber-glow-btn:active {
+  transform: translateY(0);
+  background: #065F46 !important;
+  box-shadow: 0 2px 8px 0px rgba(5, 150, 105, 0.35) !important;
+}
+
+.cyber-glow-btn:focus-visible {
+  outline: 2px solid #059669 !important;
+  outline-offset: 2px !important;
+}
+
+.cyber-glow-btn:disabled,
+.cyber-glow-btn[disabled] {
+  opacity: 0.65 !important;
+  background: #9CA3AF !important;
+  border-color: #9CA3AF !important;
+  box-shadow: none !important;
+  transform: none !important;
+  cursor: not-allowed !important;
+  color: #FFFFFF !important;
+}
+
+/* Additional Button Utility Overrides */
+[class~="bg-indigo-600"] {
+  background-color: #059669 !important;
+  color: #FFFFFF !important;
+}
+[class~="bg-indigo-600"]:hover {
+  background-color: #047857 !important;
+}
+
+/* Keyframes & Animations */
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(1deg);
+  }
+}
+
+@keyframes floatReverse {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(10px) rotate(-1deg);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes radarSweep {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%) translateY(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+.animate-float-1 {
+  animation: floatSlow 6s ease-in-out infinite;
+}
+
+.animate-float-2 {
+  animation: floatReverse 7s ease-in-out infinite 0.5s;
+}
+
+.animate-float-3 {
+  animation: floatSlow 8s ease-in-out infinite 1.5s;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 4s ease-in-out infinite;
+}
+
+.animate-modal {
+  animation: modalFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-toast {
+  animation: toastSlideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.radar-spinner {
+  animation: radarSweep 3s linear infinite;
+}
+
+/* Vault Ring Graphic in CSS */
+.vault-shield-outer {
+  position: relative;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(13, 21, 39, 0.8) 70%);
+  border: 2px solid rgba(99, 102, 241, 0.35);
+  box-shadow: 0 0 50px rgba(99, 102, 241, 0.25), inset 0 0 30px rgba(99, 102, 241, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vault-ring-dials {
+  position: absolute;
+  inset: 15px;
+  border-radius: 50%;
+  border: 2px dashed rgba(6, 182, 212, 0.4);
+  animation: radarSweep 30s linear infinite;
+}
+
+.vault-shield-inner {
+  position: relative;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1E1B4B 0%, #0F172A 100%);
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 30px rgba(139, 92, 246, 0.3);
+}
+
+/* Subtle Matrix Grid */
+.cyber-grid-bg {
+  background-image: 
+    linear-gradient(rgba(99, 102, 241, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Circular Gauge Animation */
+.progress-ring-circle {
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+/* Tooltip */
+[data-tooltip] {
+  position: relative;
+}
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: #0F172A;
+  color: #F8FAFC;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 4px;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 50;
+}
+[data-tooltip]:hover::after {
+  opacity: 1;
+}
+
+/* Toast Container */
+#toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.toast-item {
+  pointer-events: auto;
+  min-width: 300px;
+  max-width: 420px;
+}
+
+</style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased selection:bg-emerald-600 selection:text-white min-h-screen">
+  
+  <!-- App Root Mount -->
+  <div id="app-root"></div>
+
+  <!-- Modal Mount -->
+  <div id="modal-root"></div>
+
+  <!-- Toast Notification Mount -->
+  <div id="toast-container"></div>
+
+  <!-- Main ES Module Application Script -->
+  <!-- Main ES Module Application Script -->
+  <script type="module" src="/src/app.js"></script>
+</body>
+</html>

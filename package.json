@@ -1,0 +1,28 @@
+{
+  "name": "citadel",
+  "version": "1.0.0",
+  "description": "Citadel – Secure Personal Information and Multi-Account Management System",
+  "scripts": {
+    "start": "npm --prefix backend start",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "test:backend": "npm --prefix backend test",
+    "test": "npm --prefix backend test",
+    "install:all": "npm --prefix backend install && npm --prefix frontend install"
+  },
+  "keywords": [
+    "citadel",
+    "vault",
+    "security",
+    "encryption",
+    "aes-256-gcm",
+    "multi-account",
+    "react",
+    "vite",
+    "express",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "ISC"
+}

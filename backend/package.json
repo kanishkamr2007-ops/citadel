@@ -1,0 +1,35 @@
+{
+  "name": "citadel-backend",
+  "version": "1.0.0",
+  "description": "Citadel Secure Vault Backend API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node test/api.test.js && node test/document.test.js",
+    "test:api": "node test/api.test.js",
+    "test:doc": "node test/document.test.js"
+  },
+  "keywords": [
+    "security",
+    "vault",
+    "encryption",
+    "aes-256-gcm",
+    "express",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.6",
+    "express": "^5.3.0",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.11.1",
+    "morgan": "^1.12.1"
+  }
+}
