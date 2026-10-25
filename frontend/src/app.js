@@ -1182,6 +1182,7 @@ window.CitadelApi = CitadelApi;
 
 // CITADEL — Vault Store & State Management
 const STORAGE_KEY = "citadel_vault_v1_store";
+const DEMO_SESSION_CLEANUP_KEY = "citadel_demo_session_cleanup_v1";
 
 class VaultStore {
   constructor() {
@@ -2369,7 +2370,7 @@ class UIRenderer {
               <div>
                 <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Full Name</label>
                 <div class="relative">
-                  <input type="text" id="reg-name" required placeholder="Alex Morgan" value="Alex Morgan"
+                  <input type="text" id="reg-name" required placeholder="Your name"
                     class="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors text-sm" />
                 </div>
               </div>
@@ -2377,7 +2378,7 @@ class UIRenderer {
               <div>
                 <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Email Address</label>
                 <div class="relative">
-                  <input type="email" id="reg-email" required placeholder="alex.morgan@citadel-vault.io" value="alex.morgan@citadel-vault.io"
+                  <input type="email" id="reg-email" required placeholder="you@example.com"
                     class="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors text-sm" />
                 </div>
               </div>
@@ -2388,7 +2389,7 @@ class UIRenderer {
                   <span id="reg-strength-label" class="text-xs font-semibold text-emerald-400">🟢 Very Strong</span>
                 </div>
                 <div class="relative">
-                  <input type="password" id="reg-password" required value="CitadelMaster#2026!VaultKey"
+                  <input type="password" id="reg-password" required
                     oninput="window.citadelApp.handleRegisterPasswordChange(this.value)"
                     placeholder="Enter strong master password..."
                     class="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors text-sm pr-10" />
@@ -2404,7 +2405,7 @@ class UIRenderer {
 
               <div>
                 <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Confirm Master Password</label>
-                <input type="password" id="reg-confirm-password" required value="CitadelMaster#2026!VaultKey" placeholder="Repeat master password..."
+                <input type="password" id="reg-confirm-password" required placeholder="Repeat master password..."
                   class="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors text-sm" />
               </div>
 
@@ -2453,7 +2454,7 @@ class UIRenderer {
           <form id="login-form" onsubmit="window.citadelApp.handleLoginSubmit(event)" class="space-y-5">
             <div>
               <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Email Address</label>
-              <input type="email" id="login-email" required placeholder="alex.morgan@citadel-vault.io" value="alex.morgan@citadel-vault.io"
+              <input type="email" id="login-email" required placeholder="you@example.com"
                 class="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors text-sm" />
             </div>
 
@@ -2465,7 +2466,7 @@ class UIRenderer {
                 </button>
               </div>
               <div class="relative">
-                <input type="password" id="login-password" required value="CitadelMaster#2026!VaultKey" placeholder="Enter master password..."
+                <input type="password" id="login-password" required placeholder="Enter master password..."
                   class="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors text-sm pr-10" />
                 <button type="button" onclick="window.citadelApp.togglePasswordVisibility('login-password', this)" class="absolute right-3 top-3 text-slate-400 hover:text-white">
                   ${this.icon('eye', 'w-4 h-4')}
@@ -2486,11 +2487,6 @@ class UIRenderer {
             <button type="submit" id="login-submit-btn" class="cyber-glow-btn w-full py-3.5 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30">
               ${this.icon('unlock', 'w-4 h-4')}
               <span>Unlock Vault</span>
-            </button>
-
-            <!-- Quick Demo Login Button -->
-            <button type="button" onclick="window.citadelApp.handleDemoLogin()" class="w-full py-2.5 rounded-xl text-xs font-semibold border border-dashed border-emerald-500/40 bg-emerald-950/20 text-emerald-400 hover:bg-emerald-900/40 transition-colors flex items-center justify-center gap-2">
-              <span>⚡ Fast 1-Click Demo Login (Alex Morgan)</span>
             </button>
 
             <div class="text-center pt-2">
@@ -4150,18 +4146,24 @@ class CitadelApplication {
       this.render();
     });
 
-    // Check if token exists to automatically sync user session
+    if (!localStorage.getItem(DEMO_SESSION_CLEANUP_KEY)) {
+      CitadelApi.setToken('');
+      localStorage.setItem(DEMO_SESSION_CLEANUP_KEY, 'done');
+    }
+
+    // Validate saved sessions before showing any authenticated views.
     const token = CitadelApi.getToken();
     if (token) {
-      this.isAuthenticated = true;
       try {
+        await CitadelApi.request('/api/auth/me');
+        this.isAuthenticated = true;
         await this.store.syncWithBackend();
       } catch (e) {
-        console.warn("Initial sync using cached store.");
+        console.warn("Saved session is invalid; returning to login.");
+        CitadelApi.setToken('');
+        this.isAuthenticated = false;
+        this.currentView = "login";
       }
-    } else {
-      // Connect to demo session so API requests always have valid JWT auth
-      this.handleDemoLogin().catch(e => console.warn("Auto-demo initialization note:", e));
     }
 
     // Initial render
@@ -4170,13 +4172,12 @@ class CitadelApplication {
 
   // --- Router & Navigation ---
   navigate(viewName) {
-    // If navigating to auth-required pages while not logged in, auto authenticate or send to login
+    // Require a valid saved session for all authenticated views.
     const authPages = ["dashboard", "passwords", "documents", "notes", "generator", "security", "activity", "profile", "settings", "trash"];
     if (authPages.includes(viewName) && (!this.isAuthenticated || !CitadelApi.getToken())) {
-      this.isAuthenticated = true;
-      if (!CitadelApi.getToken()) {
-        this.handleDemoLogin().catch(e => console.warn("Auto-demo auth:", e));
-      }
+      this.currentView = "login";
+      this.render();
+      return;
     }
 
     this.currentView = viewName;
@@ -4298,51 +4299,10 @@ class CitadelApplication {
     }
   }
 
-  async handleDemoLogin() {
-    const demoEmail = "alex.morgan@citadel-vault.io";
-    const demoPass = "CitadelMaster#2026!VaultKey";
-
-    try {
-      let res;
-      try {
-        res = await CitadelApi.request('/api/auth/login', {
-          method: 'POST',
-          body: JSON.stringify({ email: demoEmail, password: demoPass })
-        });
-      } catch (loginErr) {
-        // If demo user is not yet created in MongoDB, register it automatically
-        res = await CitadelApi.request('/api/auth/register', {
-          method: 'POST',
-          body: JSON.stringify({
-            name: "Alex Morgan",
-            email: demoEmail,
-            password: demoPass,
-            recoveryEmail: "alex.backup@pm.me"
-          })
-        });
-      }
-
-      if (res && res.token) {
-        CitadelApi.setToken(res.token);
-      }
-      this.isAuthenticated = true;
-      if (res && res.user) {
-        this.store.state.user = { ...this.store.state.user, ...res.user };
-      }
-      await this.store.syncWithBackend();
-      this.showToast("Logged in as Alex Morgan (Vault Master)", "success");
-      this.navigate("dashboard");
-    } catch (e) {
-      this.isAuthenticated = true;
-      this.showToast("Logged in as Alex Morgan (Demo Session)", "success");
-      this.navigate("dashboard");
-    }
-  }
-
   async handleRegisterSubmit(e) {
     e.preventDefault();
-    const name = document.getElementById("reg-name")?.value || "Alex Morgan";
-    const email = document.getElementById("reg-email")?.value || "alex.morgan@citadel-vault.io";
+    const name = document.getElementById("reg-name")?.value;
+    const email = document.getElementById("reg-email")?.value;
     const password = document.getElementById("reg-password")?.value;
     const confirmPassword = document.getElementById("reg-confirm-password")?.value;
 
@@ -6129,9 +6089,7 @@ class CitadelApplication {
         <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-cyan-300">
           Emergency Key Format: CTDL-XXXX-XXXX-...
         </div>
-        <button onclick="window.citadelApp.closeAllModals(); window.citadelApp.showToast('Demo unlock key accepted.', 'success'); window.citadelApp.handleDemoLogin()" class="cyber-glow-btn w-full py-2.5 rounded-xl text-white font-bold text-xs">
-          Unlock with Emergency Kit
-        </button>
+        <p class="text-xs text-amber-300">Automated account recovery is not available yet. Keep your recovery key stored securely.</p>
       </div>
     `);
   }
