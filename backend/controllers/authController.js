@@ -9,6 +9,13 @@ const Note = require('../models/Note');
 const Trash = require('../models/Trash');
 const { hashPassword, comparePassword } = require('../utils/crypto');
 
+const maskEmail = (email) => {
+  if (typeof email !== 'string') return '[invalid-email]';
+  const [localPart, domain] = email.trim().toLowerCase().split('@');
+  if (!localPart || !domain) return '[invalid-email]';
+  return `${localPart[0]}***@${domain.replace(/[^\w.-]/g, '')}`;
+};
+
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET || 'citadel_super_secure_vault_jwt_key_2026_x89f', {
     expiresIn: '7d'
@@ -106,6 +113,7 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
+      console.warn(`[Auth] Login failed: missing credentials (IP: ${req.ip || 'unknown'})`);
       return res.status(400).json({
         success: false,
         message: 'Please provide both email and master password.'
@@ -114,6 +122,7 @@ exports.login = async (req, res) => {
 
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
+      console.warn(`[Auth] Login failed: account not found for ${maskEmail(email)} (IP: ${req.ip || 'unknown'})`);
       return res.status(401).json({
         success: false,
         message: 'Invalid email or master password.'
@@ -122,6 +131,7 @@ exports.login = async (req, res) => {
 
     const isMatch = await comparePassword(password, user.password);
     if (!isMatch) {
+      console.warn(`[Auth] Login failed: incorrect password for ${maskEmail(email)} (IP: ${req.ip || 'unknown'})`);
       return res.status(401).json({
         success: false,
         message: 'Invalid email or master password.'
@@ -152,6 +162,8 @@ exports.login = async (req, res) => {
 
     const userObj = user.toObject();
     delete userObj.password;
+
+    console.info(`[Auth] Login successful: userId=${user._id} email=${maskEmail(user.email)} (IP: ${req.ip || 'unknown'})`);
 
     return res.json({
       success: true,
@@ -480,4 +492,3 @@ exports.removeAvatar = async (req, res) => {
     });
   }
 };
-
